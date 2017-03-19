@@ -64,7 +64,7 @@ export type OptionsData = {
   /**
    * An object to pass as the rootValue to the graphql() function.
    */
-  rootValue?: ?mixed,
+  rootValue?: ?RootValue,
 
   /**
    * A boolean to configure whether the output should be pretty-printed.
@@ -101,6 +101,15 @@ export type OptionsData = {
    */
   graphiql?: ?boolean,
 };
+
+/**
+ * RootValue can be provided as an Object, a Promise for an Object,
+ * or a Function that returns an Object or a Promise for an Object.
+ */
+export type RootValue =
+  ((request: Request, response: Response) => RootValueResult)
+  | RootValueResult;
+export type RootValueResult = Promise<mixed> | mixed;
 
 /**
  * All information about a GraphQL request.
@@ -261,21 +270,33 @@ function graphqlHTTP(options: Options): Middleware {
           );
         }
       }
-      // Perform the execution, reporting any errors creating the context.
-      try {
-        return execute(
-          schema,
-          documentAST,
-          rootValue,
-          context,
-          variables,
-          operationName
+
+      return new Promise(resolve => {
+        resolve(
+          typeof rootValue === 'function' ?
+            rootValue({
+              document: documentAST,
+              variables,
+              operationName,
+            }) : rootValue
         );
-      } catch (contextError) {
-        // Return 400: Bad Request if any execution context errors exist.
-        response.statusCode = 400;
-        return { errors: [ contextError ] };
-      }
+      }).then(rootValueData => {
+        // Perform the execution, reporting any errors creating the context.
+        try {
+          return execute(
+            schema,
+            documentAST,
+            rootValueData,
+            context,
+            variables,
+            operationName
+          );
+        } catch (contextError) {
+          // Return 400: Bad Request if any execution context errors exist.
+          response.statusCode = 400;
+          return { errors: [ contextError ] };
+        }
+      });
     }).then(result => {
       // Collect and apply any metadata extensions if a function was provided.
       // http://facebook.github.io/graphql/#sec-Response-Format
