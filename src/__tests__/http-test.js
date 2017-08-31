@@ -31,6 +31,7 @@ import {
   GraphQLString,
   GraphQLError,
   BREAK,
+  execute,
 } from 'graphql';
 import graphqlHTTP from '../';
 
@@ -1808,6 +1809,37 @@ describe('test harness', () => {
             },
           ],
         });
+      });
+    });
+
+    describe('Custom execute', () => {
+      it('allow to replace default execute.', async () => {
+        const app = server();
+
+        let seenExecuteArgs;
+
+        get(
+          app,
+          urlString(),
+          graphqlHTTP(() => {
+            return {
+              schema: TestSchema,
+              async execute(args) {
+                seenExecuteArgs = args;
+                const result = await execute(args);
+                result.data.test2 = 'Modification';
+                return result;
+              },
+            };
+          }),
+        );
+
+        const response = await request(app).get(urlString({ query: '{test}' }));
+
+        expect(response.text).to.equal(
+          '{"data":{"test":"Hello World","test2":"Modification"}}',
+        );
+        expect(seenExecuteArgs).to.not.equal(null);
       });
     });
 

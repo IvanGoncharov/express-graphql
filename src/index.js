@@ -18,6 +18,7 @@ import {
   getOperationAST,
   specifiedRules,
 } from 'graphql';
+import type { ExecutionArgs, ExecutionResult } from 'graphql';
 import httpError from 'http-errors';
 import url from 'url';
 
@@ -42,6 +43,7 @@ export type Options =
     ) => OptionsResult)
   | OptionsResult;
 export type OptionsResult = OptionsData | Promise<OptionsData>;
+
 export type OptionsData = {
   /**
    * A GraphQL schema from graphql-js.
@@ -92,6 +94,12 @@ export type OptionsData = {
    * A boolean to optionally enable GraphiQL mode.
    */
   graphiql?: ?boolean,
+
+  /**
+   * An optional function which will be used to execute query instead of default
+   * "execute" from graphql-js.
+   */
+  execute?: ?(args: ExecutionArgs) => Promise<ExecutionResult>,
 };
 
 /**
@@ -176,6 +184,7 @@ function graphqlHTTP(options: Options): Middleware {
         const context = optionsData.context || request;
         const rootValue = optionsData.rootValue;
         const graphiql = optionsData.graphiql;
+        const executeFn = optionsData.execute || execute;
         pretty = optionsData.pretty;
         formatErrorFn = optionsData.formatError;
         extensionsFn = optionsData.extensions;
@@ -249,14 +258,14 @@ function graphqlHTTP(options: Options): Middleware {
         }
         // Perform the execution, reporting any errors creating the context.
         try {
-          return execute(
+          return executeFn({
             schema,
-            documentAST,
+            document: documentAST,
             rootValue,
-            context,
-            variables,
+            contextValue: context,
+            variableValues: variables,
             operationName,
-          );
+          });
         } catch (contextError) {
           // Return 400: Bad Request if any execution context errors exist.
           response.statusCode = 400;
