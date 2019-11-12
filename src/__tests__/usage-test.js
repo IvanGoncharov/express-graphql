@@ -19,7 +19,10 @@ describe('Useful errors when incorrectly used', () => {
     const app = express();
 
     // $DisableFlowOnNegativeTest
-    app.use('/graphql', graphqlHTTP(() => null));
+    app.use(
+      '/graphql',
+      graphqlHTTP(() => null),
+    );
 
     const response = await request(app).get('/graphql?query={test}');
 
@@ -38,7 +41,10 @@ describe('Useful errors when incorrectly used', () => {
     const app = express();
 
     // $DisableFlowOnNegativeTest
-    app.use('/graphql', graphqlHTTP(() => Promise.resolve(null)));
+    app.use(
+      '/graphql',
+      graphqlHTTP(() => Promise.resolve(null)),
+    );
 
     const response = await request(app).get('/graphql?query={test}');
 
@@ -57,7 +63,10 @@ describe('Useful errors when incorrectly used', () => {
     const app = express();
 
     // $DisableFlowOnNegativeTest
-    app.use('/graphql', graphqlHTTP(() => ({})));
+    app.use(
+      '/graphql',
+      graphqlHTTP(() => ({})),
+    );
 
     const response = await request(app).get('/graphql?query={test}');
 
@@ -73,7 +82,10 @@ describe('Useful errors when incorrectly used', () => {
     const app = express();
 
     // $DisableFlowOnNegativeTest
-    app.use('/graphql', graphqlHTTP(() => Promise.resolve({})));
+    app.use(
+      '/graphql',
+      graphqlHTTP(() => Promise.resolve({})),
+    );
 
     const response = await request(app).get('/graphql?query={test}');
 
@@ -91,7 +103,10 @@ describe('Useful errors when incorrectly used', () => {
 
     const app = express();
 
-    app.use('/graphql', graphqlHTTP(() => Promise.resolve({ schema })));
+    app.use(
+      '/graphql',
+      graphqlHTTP(() => Promise.resolve({ schema })),
+    );
 
     const response = await request(app).get('/graphql?query={test}');
 
